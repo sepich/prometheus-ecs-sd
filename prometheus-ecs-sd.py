@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 import argparse
+import signal
+import sys
 import boto3
 import logging
 import time
@@ -28,9 +30,16 @@ class Discoverer:
         self.ec2 = boto3.client('ec2')
 
     def loop(self, interval):
+        signal.signal(signal.SIGINT, self.signal_handler)
+        i = 0
         while True:
             self.discover()
             time.sleep(interval)
+            i += 1
+            # drop caches
+            if i > 1440:
+                i = 0
+                self.tasks = {}
 
     def discover(self):
         targets = []
@@ -70,7 +79,6 @@ class Discoverer:
                         })
             self.tasks[arn] = sd
             logger.debug(f'Got task {arn} obj: {self.tasks[arn]}')
-            # TODO cleanup cache
         return self.tasks[arn]
 
     def get_host_ip(self, cluster, arn):
@@ -105,9 +113,12 @@ class Discoverer:
         else:
             return portmap[0]['hostPort']  # mapped port
 
+    @staticmethod
+    def signal_handler(num, frame):
+        sys.exit(0)
+
 
 if __name__ == "__main__":
     args = parse_args()
     logger.debug(f"Starting with args: {args}")
     Discoverer(args.file).loop(args.interval)
-    # TODO trap sighup
