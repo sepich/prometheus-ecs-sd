@@ -3,8 +3,6 @@ import argparse
 import boto3
 import logging
 import time
-import json
-import os
 import yaml
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -56,6 +54,8 @@ class Discoverer:
                 labels = self.get_labels(container.get('dockerLabels', {}).get('PROMETHEUS_LABELS'))
                 labels['container_name'] = container['name']
                 labels['task_name'] = td['family']
+                labels['task_revision'] = td['revision']
+                labels['container_arn'] = [x for x in task['containers'] if x['name']==container['name']][0]['containerArn']
                 scrapes = container.get('dockerLabels', {}).get('PROMETHEUS_SCRAPES')
                 if scrapes:
                     for port in scrapes.split(','):
@@ -90,6 +90,7 @@ class Discoverer:
         except:
             logger.warning(f'Unable to parse Labels: {str}')
 
+    # find host 'port' mapping of container 'definition' in running 'containers'
     @staticmethod
     def get_mapped_port(port, definition, containers):
         portmap = [x for x in definition.get('portMappings', {}) if x['containerPort']==port]
@@ -109,3 +110,4 @@ if __name__ == "__main__":
     args = parse_args()
     logger.debug(f"Starting with args: {args}")
     Discoverer(args.file).loop(args.interval)
+    # TODO trap sighup
