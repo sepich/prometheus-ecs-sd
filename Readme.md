@@ -14,7 +14,7 @@ Unfortunately both of them do not support scraping the same single container on 
 Set [dockerLabels](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#container_definition_labels) of Containers in your Tasks:
 ```json
 "dockerLabels": {
-    "PROMETHEUS_SCRAPES": "8080/internal/metrics,9106"
+    "PROMETHEUS_SCRAPES": "8080/internal/metrics,9106",
     "PROMETHEUS_LABELS": "__scheme__=https,skip_15s=true"
 },
 ```
@@ -33,7 +33,7 @@ optional arguments:
   -f FILE, --file FILE  File to write tasks (default: /tmp/ecs_file_sd.yml)
   -i INTERVAL, --interval INTERVAL
                         Interval to discover ECS tasks, seconds (default: 60)
-  -l {debug,info,warn,error}, --log {debug,info,warn}
+  -l {debug,info,warn}, --log {debug,info,warn}
                         Logging level (default: info)
 ```
 Verify that you get valid `/tmp/ecs_file_sd.yml`:
