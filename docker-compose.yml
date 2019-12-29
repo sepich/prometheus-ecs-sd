@@ -1,0 +1,16 @@
+version: '2.4'
+services:
+
+  ecs-sd:
+    container_name: ecs-sd
+    image: sepa/ecs-sd
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      AWS_DEFAULT_REGION: eu-west-1
+      AWS_ACCESS_KEY_ID: ${AWS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET}
+    volumes:
+      - ./prometheus-ecs-sd.py:/usr/src/app/prometheus-ecs-sd.py
+      - /tmp/ecs_file_sd.yml:/tmp/ecs_file_sd.yml
