@@ -13,7 +13,7 @@ def parse_args():
     parser = argparse.ArgumentParser(prog='prometheus-ecs-sd', description='Prometheus file discovery for AWS ECS')
     parser.add_argument('-f', '--file', type=str, default='/tmp/ecs_file_sd.yml', help='File to write tasks (default: /tmp/ecs_file_sd.yml)')
     parser.add_argument('-i', '--interval', type=int, default=60, help='Interval to discover ECS tasks, seconds (default: 60)')
-    parser.add_argument('-l', '--log', choices=['debug', 'info', 'warn', 'error'], default='info', help='Logging level (default: info)')
+    parser.add_argument('-l', '--log', choices=['debug', 'info', 'warn'], default='info', help='Logging level (default: info)')
     args = parser.parse_args()
     logger.setLevel(getattr(logging, args.log.upper()))
     return args
