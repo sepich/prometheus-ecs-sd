@@ -1,6 +1,6 @@
 # Prometheus file discovery for AWS ECS
 
-This adds ability to dinamically discover targets to scrape in AWS ECS cluster. Prometheus integration via static [file_sd_config](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#file_sd_config) is used for that.
+This adds ability to dynamically discover targets to scrape in AWS ECS cluster. Prometheus integration via static [file_sd_config](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#file_sd_config) is used for that.
 
 ### Why yet another implementation?
 There are at least 2 other great implementations of same idea:
@@ -18,7 +18,7 @@ Set [dockerLabels](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/t
     "PROMETHEUS_LABELS": "__scheme__=https,skip_15s=true"
 },
 ```
-- `PROMETHEUS_SCRAPES` is comma delimeted list of `port/metric_path` to scrape. Note that `metric_path=/metric` by default, so usually you only need to provide `port` only. This could be single value, for one port to scrape on container
+- `PROMETHEUS_SCRAPES` is comma delimited list of `port/metric_path` to scrape. Note that `metric_path=/metric` by default, so usually you only need to provide `port` only. This could be single value, for one port to scrape on container
 - `PROMETHEUS_LABELS` (optional) comma delimited list of `key=value` labels to add to your container in Prometheus. This is the way to have some containers scraped 15s or 1m via multiple targets with [relabel_configs](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config) and `action: keep`
 
 Start discoverer:
