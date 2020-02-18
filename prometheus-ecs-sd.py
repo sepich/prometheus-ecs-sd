@@ -6,6 +6,7 @@ import boto3
 import logging
 import time
 import yaml
+import sys
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -26,8 +27,12 @@ class Discoverer:
         self.file = file
         self.tasks = {}      # ecs tasks cache
         self.hosts = {}      # ec2 container instances cache
-        self.ecs = boto3.client('ecs')
-        self.ec2 = boto3.client('ec2')
+        try:
+            self.ecs = boto3.client('ecs')
+            self.ec2 = boto3.client('ec2')
+            self.ecs.list_clusters()  # check creds
+        except Exception as e:
+            sys.exit(e)
 
     def loop(self, interval):
         signal.signal(signal.SIGINT, self.signal_handler)
@@ -107,6 +112,9 @@ class Discoverer:
         if portmap[0]['hostPort'] == 0:  # dynamic host ports
             for container in containers:
                 if container['name'] == definition['name']:
+                    if 'networkBindings' not in container:
+                        logger.info(f'Container {container["name"]} is not yet mapped to host port')
+                        return port
                     for bind in container['networkBindings']:
                         if bind['containerPort'] == port:
                             return bind['hostPort']
