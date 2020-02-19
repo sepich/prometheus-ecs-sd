@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import argparse
 import signal
-import sys
 import boto3
 import logging
 import time
@@ -78,6 +77,8 @@ class Discoverer:
                             port, path = port.split('/', maxsplit=1)
                             tmp['__metrics_path__'] = f'/{path}'
                         port = self.get_mapped_port(int(port), container, task['containers'])
+                        if port is None:  # not yet mapped, skip caching
+                            return []
                         sd.append({
                             'targets': [f'{host}:{port}'],
                             'labels': tmp
@@ -113,8 +114,8 @@ class Discoverer:
             for container in containers:
                 if container['name'] == definition['name']:
                     if 'networkBindings' not in container:
-                        logger.info(f'Container {container["name"]} is not yet mapped to host port')
-                        return port
+                        logger.info(f'Container {container["name"]} is not yet mapped to host port, skipping')
+                        return None
                     for bind in container['networkBindings']:
                         if bind['containerPort'] == port:
                             return bind['hostPort']
