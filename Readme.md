@@ -113,6 +113,8 @@ Minimal IAM policy for discoverer:
         "ECS:DescribeContainerInstances",
         "ECS:DescribeTasks",
         "ECS:DescribeTaskDefinition",
+        "ECS:ListServices",
+        "ECS:DescribeServices",
         "EC2:DescribeInstances"
       ],
       "Effect": "Allow",
