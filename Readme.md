@@ -35,6 +35,7 @@ optional arguments:
                         Interval to discover ECS tasks, seconds (default: 60)
   -l {debug,info,warn}, --log {debug,info,warn}
                         Logging level (default: info)
+  -p PORT, --port PORT  Port to serve /metrics (default: 8080)
 ```
 Verify that you get valid `/tmp/ecs_file_sd.yml`:
 ```yaml
@@ -120,6 +121,15 @@ Minimal IAM policy for discoverer:
   ]
 }
 ```
+
+### ECS Metrics
+This container also could expose ECS metrics (which are not available in CloudWatch) in Prometheus format on port `8080` and path `/metrics`:
+```
+ecs_service_desired_tasks{service="node-exporter"} 1
+ecs_service_running_tasks{service="node-exporter"} 1
+ecs_service_pending_tasks{service="node-exporter"} 0
+```
+These metrics are not cached, so each scrape would lead to `describe_service` API call. 
 
 ### TODO
  - No FARGATE support yet, as I have only EC2 ECS clusters

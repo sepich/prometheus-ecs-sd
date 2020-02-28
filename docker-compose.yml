@@ -15,3 +15,5 @@ services:
     volumes:
       - ./prometheus-ecs-sd.py:/usr/src/app/prometheus-ecs-sd.py
       - /tmp/:/tmp/
+    ports:
+    - 8080:8080

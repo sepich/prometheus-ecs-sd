@@ -3,7 +3,8 @@ import argparse
 import signal
 import boto3
 import logging
-import time
+from aiohttp import web
+import asyncio
 import yaml
 import sys
 
@@ -16,6 +17,7 @@ def parse_args():
     parser.add_argument('-f', '--file', type=str, default='/tmp/ecs_file_sd.yml', help='File to write tasks (default: /tmp/ecs_file_sd.yml)')
     parser.add_argument('-i', '--interval', type=int, default=60, help='Interval to discover ECS tasks, seconds (default: 60)')
     parser.add_argument('-l', '--log', choices=['debug', 'info', 'warn'], default='info', help='Logging level (default: info)')
+    parser.add_argument('-p', '--port', type=int, default=8080, help='Port to serve /metrics (default: 8080)')
     args = parser.parse_args()
     logger.setLevel(getattr(logging, args.log.upper()))
     return args
@@ -33,12 +35,12 @@ class Discoverer:
         except Exception as e:
             sys.exit(e)
 
-    def loop(self, interval):
+    async def loop(self, interval):
         signal.signal(signal.SIGINT, self.signal_handler)
         i = 0
         while True:
             self.discover()
-            time.sleep(interval)
+            await asyncio.sleep(interval)
             i += 1
             # drop caches
             if i > 1440:
@@ -127,7 +129,36 @@ class Discoverer:
         sys.exit(0)
 
 
+class Metrics:
+    def __init__(self):
+        self.ecs = boto3.client('ecs')
+
+    async def handler(self, request):
+        res = ''
+        for cluster in self.ecs.list_clusters().get('clusterArns', []):
+            for page in self.ecs.get_paginator('list_services').paginate(cluster=cluster):
+                for arn in page.get('serviceArns', []):
+                    service = self.ecs.describe_services(cluster=cluster, services=[arn])['services'][0]
+                    res += f'ecs_service_desired_tasks{{service="{service["serviceName"]}"}} {service["desiredCount"]}\n'
+                    res += f'ecs_service_running_tasks{{service="{service["serviceName"]}"}} {service["runningCount"]}\n'
+                    res += f'ecs_service_pending_tasks{{service="{service["serviceName"]}"}} {service["pendingCount"]}\n'
+        return web.Response(text=res)
+
+
+async def start_background_tasks(app):
+    app['discovery'] = asyncio.create_task(Discoverer(app['args'].file).loop(app['args'].interval))
+
+async def cleanup_background_tasks(app):
+    app['discovery'].cancel()
+    await app['discovery']
+
 if __name__ == "__main__":
     args = parse_args()
     logger.debug(f"Starting with args: {args}")
-    Discoverer(args.file).loop(args.interval)
+    app = web.Application()
+    app['args'] = args
+    app.router.add_get("/metrics", Metrics().handler)
+    app.on_startup.append(start_background_tasks)
+    app.on_cleanup.append(cleanup_background_tasks)
+    web.run_app(app, port=args.port, access_log=logger)
+
