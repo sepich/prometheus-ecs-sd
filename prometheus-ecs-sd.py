@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 def parse_args():
     parser = argparse.ArgumentParser(prog='prometheus-ecs-sd', description='Prometheus file discovery for AWS ECS')
     parser.add_argument('-f', '--file', type=str, default='/tmp/ecs_file_sd.yml', help='File to write tasks (default: /tmp/ecs_file_sd.yml)')
+    parser.add_argument('-c', '--cluster', type=str, default='', help='Return metrics only for this Cluster name (default: all)')
     parser.add_argument('-i', '--interval', type=int, default=60, help='Interval to discover ECS tasks, seconds (default: 60)')
     parser.add_argument('-l', '--log', choices=['debug', 'info', 'warn'], default='info', help='Logging level (default: info)')
     parser.add_argument('-p', '--port', type=int, default=8080, help='Port to serve /metrics (default: 8080)')
@@ -24,14 +25,15 @@ def parse_args():
 
 
 class Discoverer:
-    def __init__(self, file):
+    def __init__(self, file, cluster):
         self.file = file
+        self.cluster = cluster
         self.tasks = {}      # ecs tasks cache
         self.hosts = {}      # ec2 container instances cache
         try:
             self.ecs = boto3.client('ecs')
             self.ec2 = boto3.client('ec2')
-            self.ecs.list_clusters()  # check creds
+            self.ecs.list_clusters()  # check creds on start
         except Exception as e:
             sys.exit(e)
 
@@ -51,6 +53,8 @@ class Discoverer:
         targets = []
         tasks = 0
         for cluster in self.ecs.list_clusters().get('clusterArns', []):
+            if self.cluster and cluster.split('/')[-1] != self.cluster:
+                continue
             for page in self.ecs.get_paginator('list_tasks').paginate(cluster=cluster, launchType='EC2'):
                 for arn in page.get('taskArns', []):
                     targets += self.check_task(cluster=cluster, arn=arn)
@@ -66,13 +70,13 @@ class Discoverer:
             host = self.get_host_ip(cluster, task['containerInstanceArn'])
             sd = []
             for container in td['containerDefinitions']:
-                labels = self.get_labels(container.get('dockerLabels', {}).get('PROMETHEUS_LABELS'))
-                labels['container_name'] = container['name']
-                labels['task_name'] = td['family']
-                labels['task_revision'] = td['revision']
-                labels['container_arn'] = [x for x in task['containers'] if x['name']==container['name']][0]['containerArn']
                 scrapes = container.get('dockerLabels', {}).get('PROMETHEUS_SCRAPES')
                 if scrapes:
+                    labels = self.get_labels(container.get('dockerLabels', {}).get('PROMETHEUS_LABELS'))
+                    labels['container_name'] = container['name']
+                    labels['task_name'] = td['family']
+                    labels['task_revision'] = td['revision']
+                    labels['container_arn'] = [x for x in task['containers'] if x['name'] == container['name']][0]['containerArn']
                     for port in scrapes.split(','):
                         tmp = labels.copy()
                         if '/' in port:
@@ -130,12 +134,15 @@ class Discoverer:
 
 
 class Metrics:
-    def __init__(self):
+    def __init__(self, cluster):
+        self.cluster = cluster
         self.ecs = boto3.client('ecs')
 
     async def handler(self, request):
         res = ''
         for cluster in self.ecs.list_clusters().get('clusterArns', []):
+            if self.cluster and cluster.split('/')[-1] != self.cluster:
+                continue
             for page in self.ecs.get_paginator('list_services').paginate(cluster=cluster):
                 for arn in page.get('serviceArns', []):
                     service = self.ecs.describe_services(cluster=cluster, services=[arn])['services'][0]
@@ -146,7 +153,7 @@ class Metrics:
 
 
 async def start_background_tasks(app):
-    app['discovery'] = asyncio.create_task(Discoverer(app['args'].file).loop(app['args'].interval))
+    app['discovery'] = asyncio.create_task(Discoverer(app['args'].file, app['args'].cluster).loop(app['args'].interval))
 
 async def cleanup_background_tasks(app):
     app['discovery'].cancel()
@@ -157,7 +164,7 @@ if __name__ == "__main__":
     logger.debug(f"Starting with args: {args}")
     app = web.Application()
     app['args'] = args
-    app.router.add_get("/metrics", Metrics().handler)
+    app.router.add_get("/metrics", Metrics(args.cluster).handler)
     app.on_startup.append(start_background_tasks)
     app.on_cleanup.append(cleanup_background_tasks)
     web.run_app(app, port=args.port, access_log=logger)

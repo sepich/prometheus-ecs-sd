@@ -31,6 +31,8 @@ Prometheus file discovery for AWS ECS
 optional arguments:
   -h, --help            show this help message and exit
   -f FILE, --file FILE  File to write tasks (default: /tmp/ecs_file_sd.yml)
+  -c CLUSTER, --cluster CLUSTER
+                        Return metrics only for this Cluster name (default: all)
   -i INTERVAL, --interval INTERVAL
                         Interval to discover ECS tasks, seconds (default: 60)
   -l {debug,info,warn}, --log {debug,info,warn}
@@ -99,7 +101,7 @@ scrape_configs:
         action: labeldrop
 ```
 
-Minimal IAM policy for discoverer:
+Minimal IAM policy for the discoverer:
 ```json
 {
   "Version": "2012-10-17",
@@ -131,7 +133,7 @@ ecs_service_desired_tasks{service="node-exporter"} 1
 ecs_service_running_tasks{service="node-exporter"} 1
 ecs_service_pending_tasks{service="node-exporter"} 0
 ```
-These metrics are not cached, so each scrape would lead to `describe_service` API call. 
+These metrics are not cached, so each scrape would lead to `describe_service` API call. You can limit metrics to specific ECS Cluster via `--cluster` cli argument. 
 
 ### TODO
  - No FARGATE support yet, as I have only EC2 ECS clusters
