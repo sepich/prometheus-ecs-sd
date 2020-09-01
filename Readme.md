@@ -18,8 +18,8 @@ Set [dockerLabels](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/t
     "PROMETHEUS_LABELS": "__scheme__=https,skip_15s=true"
 },
 ```
-- `PROMETHEUS_SCRAPES` is comma delimited list of `port/metric_path` to scrape. Note that `metric_path=/metric` by default, so usually you only need to provide `port` only. This could be single value, for one port to scrape on container
-- `PROMETHEUS_LABELS` (optional) comma delimited list of `key=value` labels to add to your container in Prometheus. This is the way to have some containers scraped 15s or 1m via multiple targets with [relabel_configs](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config) and `action: keep`
+- `PROMETHEUS_SCRAPES` is a comma delimited list of `port/metric_path` to scrape. Note that `metric_path=/metric` by default, so usually you only need to provide `port` only. This could be single value, for one port to scrape on a container.
+- `PROMETHEUS_LABELS` (optional) comma delimited list of `key=value` labels to add to your container in Prometheus. This is the way to have some containers scraped 15s or 1m via multiple targets with [relabel_configs](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config) and `action: keep`.
 
 Start discoverer:
 ```bash
