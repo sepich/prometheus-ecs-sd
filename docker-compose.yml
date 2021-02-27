@@ -9,9 +9,8 @@ services:
       dockerfile: Dockerfile
     environment:
       AWS_DEFAULT_REGION: eu-west-1
-      AWS_ACCESS_KEY_ID: ${AWS_KEY}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET}
-      AWS_SESSION_TOKEN: ${AWS_TOKEN}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
     volumes:
       - ./prometheus-ecs-sd.py:/usr/src/app/prometheus-ecs-sd.py
       - /tmp/:/tmp/
