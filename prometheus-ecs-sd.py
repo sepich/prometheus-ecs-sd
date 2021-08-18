@@ -106,7 +106,7 @@ class Discoverer:
         if not str:
             return {}
         try:
-            return  dict(x.split('=', maxsplit=1) for x in str.split(','))
+            return dict(x.split('=', maxsplit=1) for x in str.split(','))
         except:
             logger.warning(f'Unable to parse Labels: {str}')
 
@@ -154,6 +154,7 @@ class Metrics:
 
 async def start_background_tasks(app):
     app['discovery'] = asyncio.create_task(Discoverer(app['args'].file, app['args'].cluster).loop(app['args'].interval))
+
 
 async def cleanup_background_tasks(app):
     app['discovery'].cancel()

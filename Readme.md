@@ -110,7 +110,6 @@ Minimal IAM policy for the discoverer:
       "Action": [
         "ECS:ListClusters",
         "ECS:ListTasks",
-        "ECS:DescribeTask",
         "ECS:DescribeClusters",
         "ECS:DescribeContainerInstances",
         "ECS:DescribeTasks",
