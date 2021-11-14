@@ -1,6 +1,5 @@
-FROM python:3.7-slim-buster
-ENV PYTHONDONTWRITEBYTECODE=true
-ENV PYTHONUNBUFFERED=true
+FROM python:3.9-slim-buster
+ENV PYTHONDONTWRITEBYTECODE=true PYTHONUNBUFFERED=true
 
 WORKDIR /usr/src/app
 COPY requirements.txt ./

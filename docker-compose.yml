@@ -4,6 +4,9 @@ services:
   ecs-sd:
     container_name: ecs-sd
     image: sepa/ecs-sd
+    command:
+      - -l=debug
+      - -i=10
     build:
       context: .
       dockerfile: Dockerfile

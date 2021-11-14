@@ -39,9 +39,13 @@ class Discoverer:
 
     async def loop(self, interval):
         signal.signal(signal.SIGINT, self.signal_handler)
+        el = asyncio.get_event_loop()
         i = 0
         while True:
-            self.discover()
+            try:
+                await asyncio.wait_for(el.run_in_executor(None, self.discover), timeout=interval)
+            except Exception as e:
+                logger.error(f'Timeout while reading ECS Tasks! Try to increase --interval {e}')
             await asyncio.sleep(interval)
             i += 1
             # drop caches
