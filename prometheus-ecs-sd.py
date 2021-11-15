@@ -44,8 +44,10 @@ class Discoverer:
         while True:
             try:
                 await asyncio.wait_for(el.run_in_executor(None, self.discover), timeout=interval)
-            except Exception as e:
-                logger.error(f'Timeout while reading ECS Tasks! Try to increase --interval {e}')
+            except asyncio.exceptions.TimeoutError:
+                logger.error(f'Timeout while reading ECS Tasks! Try to increase --interval')
+            except Exception:
+                logger.error(f'Read tasks error:', exc_info=True)
             await asyncio.sleep(interval)
             i += 1
             # drop caches
@@ -71,6 +73,8 @@ class Discoverer:
         if arn not in self.tasks:
             task = self.ecs.describe_tasks(cluster=cluster, tasks=[arn])['tasks'][0]
             td = self.ecs.describe_task_definition(taskDefinition=task['taskDefinitionArn'])['taskDefinition']
+            if 'containerInstanceArn' not in task:  # not yet mapped, skip caching
+                return []
             host = self.get_host_ip(cluster, task['containerInstanceArn'])
             sd = []
             for container in td['containerDefinitions']:
