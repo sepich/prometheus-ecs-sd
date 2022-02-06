@@ -44,6 +44,7 @@ Verify that you get valid `/tmp/ecs_file_sd.yml`:
 - labels:
     container_arn: arn:aws:ecs:eu-west-1:111:container/064c4ef7-6bb2-4ec3-b619-e0d6896f52c4
     container_name: backend-dev
+    instance_id: i-08a6047039ca60159
     task_name: backend
     task_revision: 52
     __metrics_path__: /internal/metrics
@@ -52,6 +53,7 @@ Verify that you get valid `/tmp/ecs_file_sd.yml`:
 - labels:
     container_arn: arn:aws:ecs:eu-west-1:111:container/064c4ef7-6bb2-4ec3-b619-e0d6896f52c4
     container_name: backend-dev
+    instance_id: i-08a6047039ca60159
     task_name: backend
     task_revision: 52
   targets:
@@ -59,6 +61,7 @@ Verify that you get valid `/tmp/ecs_file_sd.yml`:
 - labels:
     container_arn: arn:aws:ecs:eu-west-1:111:container/978972c8-646d-49cc-9933-4bb3daa2eeea
     container_name: node-exporter
+    instance_id: i-08a6047039ca60159
     task_name: node-exporter
     task_revision: 13
   targets:
@@ -66,6 +69,7 @@ Verify that you get valid `/tmp/ecs_file_sd.yml`:
 - labels:
     container_arn: arn:aws:ecs:eu-west-1:111:container/7abd91d2-091d-4f12-80a7-14c279260aac
     container_name: cadvisor
+    instance_id: i-08a6047039ca60159
     task_name: cadvisor
     task_revision: 8
   targets:
@@ -91,9 +95,9 @@ scrape_configs:
         regex: (.*);(.*);.*-(.*)
         replacement: $1-$2-$3
         target_label: instance
-      # leave as ip for node-exporter and cadvisor
-      - source_labels: [container_name, __address__]
-        regex: (node-exporter|cadvisor);([^:]+)([\.:].*)?
+      # use instance_id for node-exporter and cadvisor
+      - source_labels: [container_name, instance_id]
+        regex: (node-exporter|cadvisor);(.*)
         replacement: $2
         target_label: instance
       # not needed anymore

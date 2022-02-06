@@ -75,7 +75,7 @@ class Discoverer:
             td = self.ecs.describe_task_definition(taskDefinition=task['taskDefinitionArn'])['taskDefinition']
             if 'containerInstanceArn' not in task:  # not yet mapped, skip caching
                 return []
-            host = self.get_host_ip(cluster, task['containerInstanceArn'])
+            ip = self.get_host_ip(cluster, task['containerInstanceArn'])
             sd = []
             for container in td['containerDefinitions']:
                 scrapes = container.get('dockerLabels', {}).get('PROMETHEUS_SCRAPES')
@@ -85,6 +85,7 @@ class Discoverer:
                     labels['task_name'] = td['family']
                     labels['task_revision'] = td['revision']
                     labels['container_arn'] = [x for x in task['containers'] if x['name'] == container['name']][0]['containerArn']
+                    labels['instance_id'] = self.hosts[task['containerInstanceArn']]['id']
                     for port in scrapes.split(','):
                         tmp = labels.copy()
                         if '/' in port:
@@ -94,7 +95,7 @@ class Discoverer:
                         if port is None:  # not yet mapped, skip caching
                             return []
                         sd.append({
-                            'targets': [f'{host}:{port}'],
+                            'targets': [f'{ip}:{port}'],
                             'labels': tmp
                         })
             self.tasks[arn] = sd
@@ -104,9 +105,12 @@ class Discoverer:
     def get_host_ip(self, cluster, arn):
         if arn not in self.hosts:
             id = self.ecs.describe_container_instances(cluster=cluster, containerInstances=[arn])['containerInstances'][0]['ec2InstanceId']
-            self.hosts[arn] = self.ec2.describe_instances(InstanceIds=[id])['Reservations'][0]['Instances'][0]['PrivateIpAddress']
-            logger.debug(f'Got host {arn} IP: {self.hosts[arn]}')
-        return self.hosts[arn]
+            self.hosts[arn] = {
+                'id': id,
+                'ip': self.ec2.describe_instances(InstanceIds=[id])['Reservations'][0]['Instances'][0]['PrivateIpAddress']
+            }
+            logger.debug(f'Got host {arn} IP: {self.hosts[arn]["ip"]}')
+        return self.hosts[arn]["ip"]
 
     # "__scheme__=https,skip_15s=true" => {"__scheme__": "https", "skip_15s": "true"}
     @staticmethod
