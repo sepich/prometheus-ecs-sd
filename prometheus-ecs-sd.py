@@ -19,15 +19,17 @@ def parse_args():
     parser.add_argument('-i', '--interval', type=int, default=60, help='Interval to discover ECS tasks, seconds (default: 60)')
     parser.add_argument('-l', '--log', choices=['debug', 'info', 'warn'], default='info', help='Logging level (default: info)')
     parser.add_argument('-p', '--port', type=int, default=8080, help='Port to serve /metrics (default: 8080)')
+    parser.add_argument('--container-runtime-id', action=argparse.BooleanOptionalAction, help='Adds container runtime ID to exported labels.')
     args = parser.parse_args()
     logger.setLevel(getattr(logging, args.log.upper()))
     return args
 
 
 class Discoverer:
-    def __init__(self, file, cluster):
+    def __init__(self, file, cluster, add_container_runtime_id):
         self.file = file
         self.cluster = cluster
+        self.add_container_runtime_id = add_container_runtime_id
         self.tasks = {}      # ecs tasks cache
         self.hosts = {}      # ec2 container instances cache
         try:
@@ -85,6 +87,8 @@ class Discoverer:
                     labels['task_name'] = td['family']
                     labels['task_revision'] = td['revision']
                     labels['container_arn'] = [x for x in task['containers'] if x['name'] == container['name']][0]['containerArn']
+                    if self.add_container_runtime_id:
+                        labels['container_runtime_id'] = [x for x in task['containers'] if x['name'] == container['name']][0]['runtimeId']
                     labels['instance_id'] = self.hosts[task['containerInstanceArn']]['id']
                     for port in scrapes.split(','):
                         tmp = labels.copy()
@@ -165,7 +169,10 @@ class Metrics:
 
 
 async def start_background_tasks(app):
-    app['discovery'] = asyncio.create_task(Discoverer(app['args'].file, app['args'].cluster).loop(app['args'].interval))
+    app['discovery'] = asyncio.create_task(
+        Discoverer(app['args'].file,
+                   app['args'].cluster,
+                   app['args'].container_runtime_id).loop(app['args'].interval))
 
 
 async def cleanup_background_tasks(app):
