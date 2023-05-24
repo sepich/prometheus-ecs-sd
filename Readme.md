@@ -42,6 +42,9 @@ optional arguments:
 Verify that you get valid `/tmp/ecs_file_sd.yml`:
 ```yaml
 - labels:
+    __task_group: service:backend
+    __container_image: backend:1
+    __container_runtime_id: 071cbe78cfe3fff4ea037cec21008b0cb710214a42489a24fee8e49c698a969b
     container_arn: arn:aws:ecs:eu-west-1:111:container/064c4ef7-6bb2-4ec3-b619-e0d6896f52c4
     container_name: backend-dev
     instance_id: i-08a6047039ca60159
@@ -51,6 +54,9 @@ Verify that you get valid `/tmp/ecs_file_sd.yml`:
   targets:
   - 10.0.0.3:32342
 - labels:
+    __task_group: service:backend
+    __container_image: backend:1
+    __container_runtime_id: 501d74cfe79a1073bd1370d9f6c58cf9007a3d897ffec6bac2acaba74cd85451
     container_arn: arn:aws:ecs:eu-west-1:111:container/064c4ef7-6bb2-4ec3-b619-e0d6896f52c4
     container_name: backend-dev
     instance_id: i-08a6047039ca60159
@@ -59,6 +65,9 @@ Verify that you get valid `/tmp/ecs_file_sd.yml`:
   targets:
   - 10.0.0.3:32799
 - labels:
+    __task_group: service:node-exporter
+    __container_image: prom/node-exporter:v1.0.1
+    __container_runtime_id: ae854633add6f92d0681c6147822df44422a8db2cc5a116f289f07e3adc9db56
     container_arn: arn:aws:ecs:eu-west-1:111:container/978972c8-646d-49cc-9933-4bb3daa2eeea
     container_name: node-exporter
     instance_id: i-08a6047039ca60159
@@ -67,6 +76,9 @@ Verify that you get valid `/tmp/ecs_file_sd.yml`:
   targets:
   - 10.0.0.3:9100
 - labels:
+    __group: service:cadvisor
+    __container_image: gcr.io/google-containers/cadvisor:v0.35.0
+    __container_runtime_id: d89fdd2da5cdcbd50ddd68395c8cc6a70c77c84d81288c3669a984835803a39a
     container_arn: arn:aws:ecs:eu-west-1:111:container/7abd91d2-091d-4f12-80a7-14c279260aac
     container_name: cadvisor
     instance_id: i-08a6047039ca60159
@@ -76,6 +88,12 @@ Verify that you get valid `/tmp/ecs_file_sd.yml`:
   - 10.0.0.3:32798
 ```
 By default this file would be updated each 60s. Script caches API responses to not hit AWS API limits, but anyway it have to list all Tasks each time, so do not set `--interval` too low.
+
+Please note that labels prefixed with `__` are only available at relabel phase:
+https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
+> Labels starting with `__` will be removed from the label set after target relabeling is completed.
+
+You can use `relabel_action: replace` to store these additional labels if you need them.
 
 Integrate to Prometheus:
 ```yaml

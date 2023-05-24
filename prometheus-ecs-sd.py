@@ -84,7 +84,11 @@ class Discoverer:
                     labels['container_name'] = container['name']
                     labels['task_name'] = td['family']
                     labels['task_revision'] = td['revision']
-                    labels['container_arn'] = [x for x in task['containers'] if x['name'] == container['name']][0]['containerArn']
+                    tc = [x for x in task['containers'] if x['name'] == container['name']][0]
+                    labels['container_arn'] = tc.get('containerArn', '')
+                    labels['__container_image'] = tc.get('image', '')
+                    labels['__task_group'] = task.get('group', '')
+                    labels['__container_runtime_id'] = tc.get('runtimeId', '')
                     labels['instance_id'] = self.hosts[task['containerInstanceArn']]['id']
                     for port in scrapes.split(','):
                         tmp = labels.copy()
