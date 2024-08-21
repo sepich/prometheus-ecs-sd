@@ -1,10 +1,9 @@
-FROM python:3.9-slim-buster
-ENV PYTHONDONTWRITEBYTECODE=true PYTHONUNBUFFERED=true
-
-WORKDIR /usr/src/app
+FROM python:3.11-slim AS build-env
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-USER 1000
-COPY prometheus-ecs-sd.py .
-ENTRYPOINT [ "./prometheus-ecs-sd.py" ]
+FROM gcr.io/distroless/python3-debian12:nonroot
+ENV PYTHONDONTWRITEBYTECODE=true PYTHONUNBUFFERED=true PYTHONPATH=/usr/local/lib/python3.11/site-packages
+COPY --from=build-env /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY prometheus-ecs-sd.py /app/
+ENTRYPOINT ["/app/prometheus-ecs-sd.py"]
